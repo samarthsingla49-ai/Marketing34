@@ -125,11 +125,10 @@
             .section { padding: 20vw 8vw; }
         }
 
-        /* Ribbon canvas */
+        /* Ribbon canvas — Three.js sets width/height via setSize() */
         #ribbon-canvas {
             position: absolute;
             top: 0; left: 0;
-            width: 100%; height: 100%;
             pointer-events: none;
             z-index: 5;
         }
@@ -288,164 +287,146 @@
         </footer>
     </main>
 
-    <!-- ============================================================
-         3D Flowing Ribbon — Three.js
-         Weaves through the hero text using CSS z-index layering:
-           canvas z-index 5  |  "We unlock" / "talent." at z-index 1
-           "[top] marketing" at z-index 15  →  ribbon passes behind it
-    ============================================================ -->
+    <!-- 3D Flowing Ribbon — Three.js -->
     <script>
-    (function initRibbon() {
+    (function() {
         if (typeof THREE === 'undefined') return;
 
-        const canvas  = document.getElementById('ribbon-canvas');
-        const section = document.getElementById('hero-section');
-        if (!canvas || !section) return;
+        function startRibbon() {
+            const canvas  = document.getElementById('ribbon-canvas');
+            const section = document.getElementById('hero-section');
+            if (!canvas || !section) return;
 
-        /* ---- Renderer ---- */
-        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
-        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-        renderer.setClearColor(0x000000, 0);
+            /* ---- Renderer: alpha background so hero bg shows through ---- */
+            let renderer;
+            try {
+                renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true });
+            } catch(e) { return; }
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setClearColor(0x000000, 0);
 
-        /* ---- Scene / Camera ---- */
-        const scene  = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
-        camera.position.set(0, 0, 7);
+            /* ---- Scene / Camera ---- */
+            const scene  = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+            camera.position.z = 6;
 
-        /* ---- Lighting ---- */
-        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            /* ---- Lighting ---- */
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-        const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
-        keyLight.position.set(4, 5, 5);
-        scene.add(keyLight);
+            const key = new THREE.DirectionalLight(0xffffff, 2.5);
+            key.position.set(3, 5, 5);
+            scene.add(key);
 
-        // Left fill — gives the ribbon a blue-lit edge
-        const fillLight = new THREE.PointLight(0x4477ff, 4, 22);
-        fillLight.position.set(-6, 1, 3);
-        scene.add(fillLight);
+            const fill = new THREE.PointLight(0x4488ff, 6, 25);
+            fill.position.set(-6, 0, 3);
+            scene.add(fill);
 
-        // Right rim — creates the bright white specular streak
-        const rimLight = new THREE.PointLight(0xffffff, 5, 18);
-        rimLight.position.set(5, -3, 4);
-        scene.add(rimLight);
+            const rim = new THREE.PointLight(0xffffff, 7, 20);
+            rim.position.set(5, -2, 4);
+            scene.add(rim);
 
-        /* ---- Geometry buffers ---- */
-        const SEGS = 220;           // segments along the ribbon length
-        const HALF_W = 0.68;        // half-width of the ribbon
+            /* ---- Geometry ---- */
+            const SEGS   = 200;
+            const HALF_W = 1.3;   // wide ribbon — clearly visible
 
-        const posArr  = new Float32Array((SEGS + 1) * 6);  // 2 verts × 3 floats
-        const normArr = new Float32Array((SEGS + 1) * 6);
-        const uvArr   = new Float32Array((SEGS + 1) * 4);  // 2 verts × 2 floats
-        const indices = [];
-
-        for (let i = 0; i <= SEGS; i++) {
-            const t = i / SEGS;
-            uvArr[i * 4]     = 0; uvArr[i * 4 + 1] = t;
-            uvArr[i * 4 + 2] = 1; uvArr[i * 4 + 3] = t;
-        }
-        for (let i = 0; i < SEGS; i++) {
-            const a = i*2, b = i*2+1, c = i*2+2, d = i*2+3;
-            indices.push(a, b, c,  b, d, c);
-        }
-
-        const geo = new THREE.BufferGeometry();
-        const posAttr  = new THREE.BufferAttribute(posArr,  3);
-        const normAttr = new THREE.BufferAttribute(normArr, 3);
-        geo.setAttribute('position', posAttr);
-        geo.setAttribute('normal',   normAttr);
-        geo.setAttribute('uv',       new THREE.BufferAttribute(uvArr, 2));
-        geo.setIndex(indices);
-
-        /* ---- Material ---- */
-        const mat = new THREE.MeshPhongMaterial({
-            color:     0x0044ee,
-            specular:  0x99bbff,
-            shininess: 130,
-            emissive:  new THREE.Color(0x001155),
-            side:      THREE.DoubleSide,
-        });
-
-        const ribbonMesh = new THREE.Mesh(geo, mat);
-        scene.add(ribbonMesh);
-
-        /* ---- Ribbon path update ---- */
-        function updateRibbon(t) {
-            // Build a smooth S-curve via CatmullRom control points
-            const N  = 13;
-            const pts = [];
-            for (let i = 0; i <= N; i++) {
-                const s = i / N;
-                const y =  (s - 0.5) * 15;
-                // Primary S-wave + secondary harmonic = organic water-like motion
-                const x =  Math.sin(s * Math.PI * 2.2  + t * 0.42) * 2.4
-                          + Math.sin(s * Math.PI * 5.0  + t * 0.22) * 0.55;
-                const z =  Math.cos(s * Math.PI * 2.8  + t * 0.36) * 1.5
-                          + Math.cos(s * Math.PI * 6.0  + t * 0.18) * 0.35;
-                pts.push(new THREE.Vector3(x, y, z));
-            }
-
-            const curve  = new THREE.CatmullRomCurve3(pts);
-            const frames = curve.computeFrenetFrames(SEGS, false);
+            const pos = new Float32Array((SEGS + 1) * 6);
+            const nrm = new Float32Array((SEGS + 1) * 6);
+            const uv  = new Float32Array((SEGS + 1) * 4);
+            const idx = [];
 
             for (let i = 0; i <= SEGS; i++) {
-                const s  = i / SEGS;
-                const p  = curve.getPoint(s);
-                const bn = frames.binormals[i];
-                const n  = frames.normals[i];
-
-                // Continuous twist along the ribbon length — creates the Möbius-like flip
-                const twist = s * Math.PI * 2.6 + t * 0.18;
-                const cosT  = Math.cos(twist);
-                const sinT  = Math.sin(twist);
-
-                // Rotated binormal (ribbon width direction)
-                const bx = bn.x * cosT + n.x * sinT;
-                const by = bn.y * cosT + n.y * sinT;
-                const bz = bn.z * cosT + n.z * sinT;
-
-                // Rotated normal (for shading)
-                const nx = -bn.x * sinT + n.x * cosT;
-                const ny = -bn.y * sinT + n.y * cosT;
-                const nz = -bn.z * sinT + n.z * cosT;
-
-                const vi = i * 6;
-                // Left edge
-                posArr[vi]   = p.x - bx * HALF_W;
-                posArr[vi+1] = p.y - by * HALF_W;
-                posArr[vi+2] = p.z - bz * HALF_W;
-                // Right edge
-                posArr[vi+3] = p.x + bx * HALF_W;
-                posArr[vi+4] = p.y + by * HALF_W;
-                posArr[vi+5] = p.z + bz * HALF_W;
-                // Normals (same for both edges — flat-shaded look)
-                normArr[vi]   = nx; normArr[vi+1] = ny; normArr[vi+2] = nz;
-                normArr[vi+3] = nx; normArr[vi+4] = ny; normArr[vi+5] = nz;
+                const t = i / SEGS;
+                uv[i*4]=0; uv[i*4+1]=t; uv[i*4+2]=1; uv[i*4+3]=t;
+            }
+            for (let i = 0; i < SEGS; i++) {
+                const a=i*2,b=i*2+1,c=i*2+2,d=i*2+3;
+                idx.push(a,b,c, b,d,c);
             }
 
-            posAttr.needsUpdate  = true;
-            normAttr.needsUpdate = true;
+            const geo      = new THREE.BufferGeometry();
+            const posAttr  = new THREE.BufferAttribute(pos, 3);
+            const nrmAttr  = new THREE.BufferAttribute(nrm, 3);
+            geo.setAttribute('position', posAttr);
+            geo.setAttribute('normal',   nrmAttr);
+            geo.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+            geo.setIndex(idx);
+
+            const mat = new THREE.MeshPhongMaterial({
+                color:     0x0044ff,
+                specular:  0xaaccff,
+                shininess: 160,
+                emissive:  new THREE.Color(0x001166),
+                side:      THREE.DoubleSide,
+            });
+
+            scene.add(new THREE.Mesh(geo, mat));
+
+            /* ---- Path update each frame ---- */
+            function updateRibbon(t) {
+                const N = 12, pts = [];
+                for (let i = 0; i <= N; i++) {
+                    const s = i / N;
+                    // Y spans a little beyond the visible frustum so it flows in/out
+                    const y = (s - 0.5) * 10;
+                    // S-curve in X with gentle secondary harmonic
+                    const x = Math.sin(s * Math.PI * 2   + t * 0.38) * 2.2
+                             + Math.sin(s * Math.PI * 4.5 + t * 0.20) * 0.45;
+                    // Z depth gives the 3-D plunge in/out of screen
+                    const z = Math.cos(s * Math.PI * 2.5 + t * 0.30) * 1.4;
+                    pts.push(new THREE.Vector3(x, y, z));
+                }
+
+                const curve  = new THREE.CatmullRomCurve3(pts);
+                const frames = curve.computeFrenetFrames(SEGS, false);
+
+                for (let i = 0; i <= SEGS; i++) {
+                    const s  = i / SEGS;
+                    const p  = curve.getPoint(s);
+                    const bn = frames.binormals[i];
+                    const n  = frames.normals[i];
+
+                    // Gentle twist — keeps broad ribbon face visible most of the time
+                    const tw = s * Math.PI * 1.2 + t * 0.12;
+                    const c  = Math.cos(tw), sn = Math.sin(tw);
+                    const bx = bn.x*c+n.x*sn, by = bn.y*c+n.y*sn, bz = bn.z*c+n.z*sn;
+                    const nx = -bn.x*sn+n.x*c, ny = -bn.y*sn+n.y*c, nz = -bn.z*sn+n.z*c;
+
+                    const vi = i * 6;
+                    pos[vi]  =p.x-bx*HALF_W; pos[vi+1]=p.y-by*HALF_W; pos[vi+2]=p.z-bz*HALF_W;
+                    pos[vi+3]=p.x+bx*HALF_W; pos[vi+4]=p.y+by*HALF_W; pos[vi+5]=p.z+bz*HALF_W;
+                    nrm[vi]  =nx; nrm[vi+1]=ny; nrm[vi+2]=nz;
+                    nrm[vi+3]=nx; nrm[vi+4]=ny; nrm[vi+5]=nz;
+                }
+                posAttr.needsUpdate = true;
+                nrmAttr.needsUpdate = true;
+            }
+
+            /* ---- Resize: let Three.js own the canvas size (no CSS width/height needed) ---- */
+            function resize() {
+                const w = section.clientWidth  || window.innerWidth;
+                const h = section.clientHeight || window.innerHeight;
+                renderer.setSize(w, h);   // sets canvas.style.width/height too
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            }
+            resize();
+            window.addEventListener('resize', resize);
+
+            /* ---- Loop ---- */
+            (function loop() {
+                requestAnimationFrame(loop);
+                if (document.hidden) return;
+                updateRibbon(performance.now() * 0.001);
+                renderer.render(scene, camera);
+            })();
         }
 
-        /* ---- Resize ---- */
-        function onResize() {
-            const w = section.clientWidth;
-            const h = section.clientHeight;
-            renderer.setSize(w, h, false);
-            camera.aspect = w / h;
-            camera.updateProjectionMatrix();
+        // Wait for full layout before reading clientHeight/Width
+        if (document.readyState === 'complete') {
+            startRibbon();
+        } else {
+            window.addEventListener('load', startRibbon);
         }
-        onResize();
-        window.addEventListener('resize', onResize);
-
-        /* ---- Animation loop ---- */
-        function animate() {
-            requestAnimationFrame(animate);
-            if (document.hidden) return;
-            const time = performance.now() * 0.001;
-            updateRibbon(time);
-            renderer.render(scene, camera);
-        }
-        animate();
     })();
     </script>
 
