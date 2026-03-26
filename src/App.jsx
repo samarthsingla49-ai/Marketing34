@@ -1,179 +1,218 @@
 import { useEffect, useRef } from 'react'
 import Hero from './components/Hero'
+import { useGsapReveal } from './hooks/useGsapReveal'
 
-/* ── Custom cursor ──────────────────────────────────────────────────────────── */
-function Cursor () {
-  const dot      = useRef(null)
-  const ring     = useRef(null)
-  const mouse    = useRef({ x: 0, y: 0 })
-  const current  = useRef({ x: 0, y: 0 })
-  const rafId    = useRef(null)
+/* ── Custom cursor (replaces system cursor) ─────────────────────────────────── */
+function CustomCursor () {
+  const dot  = useRef(null)
+  const ring = useRef(null)
+  const pos  = useRef({ x: 0, y: 0 })
+  const lag  = useRef({ x: 0, y: 0 })
+  const raf  = useRef(null)
 
   useEffect(() => {
-    const onMove = e => { mouse.current.x = e.clientX; mouse.current.y = e.clientY }
-    window.addEventListener('mousemove', onMove)
+    const onMove = e => { pos.current.x = e.clientX; pos.current.y = e.clientY }
+    window.addEventListener('mousemove', onMove, { passive: true })
 
     const tick = () => {
-      current.current.x += (mouse.current.x - current.current.x) * 0.12
-      current.current.y += (mouse.current.y - current.current.y) * 0.12
-      if (ring.current) {
-        ring.current.style.left = current.current.x + 'px'
-        ring.current.style.top  = current.current.y + 'px'
-      }
-      rafId.current = requestAnimationFrame(tick)
+      lag.current.x += (pos.current.x - lag.current.x) * 0.11
+      lag.current.y += (pos.current.y - lag.current.y) * 0.11
+      if (dot.current)  dot.current.style.transform  = `translate(${pos.current.x}px,${pos.current.y}px) translate(-50%,-50%)`
+      if (ring.current) ring.current.style.transform = `translate(${lag.current.x}px,${lag.current.y}px) translate(-50%,-50%)`
+      raf.current = requestAnimationFrame(tick)
     }
-    rafId.current = requestAnimationFrame(tick)
+    raf.current = requestAnimationFrame(tick)
+
+    // Expand ring on hoverable elements
+    const expand   = () => ring.current?.classList.add('expanded')
+    const collapse = () => ring.current?.classList.remove('expanded')
+    document.querySelectorAll('a,button,[data-hover]').forEach(el => {
+      el.addEventListener('mouseenter', expand)
+      el.addEventListener('mouseleave', collapse)
+    })
 
     return () => {
       window.removeEventListener('mousemove', onMove)
-      cancelAnimationFrame(rafId.current)
+      cancelAnimationFrame(raf.current)
     }
-  }, [])
-
-  const snap = e => {
-    if (dot.current) {
-      dot.current.style.left = e.clientX + 'px'
-      dot.current.style.top  = e.clientY + 'px'
-    }
-  }
-
-  useEffect(() => {
-    window.addEventListener('mousemove', snap)
-    return () => window.removeEventListener('mousemove', snap)
   }, [])
 
   return (
     <>
-      <div ref={dot}  className="cursor" />
-      <div ref={ring} className="cursor-follower" />
+      <div ref={dot}  className="cursor-dot"  />
+      <div ref={ring} className="cursor-ring" />
     </>
   )
 }
 
-/* ── Header ─────────────────────────────────────────────────────────────────── */
+/* ── Navigation — ultra-minimal, logo + MENU only ───────────────────────────── */
 function Header () {
+  const ref = useRef(null)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const onScroll = () => {
+      if (window.scrollY > 60) {
+        el.style.background     = 'rgba(255,255,255,0.88)'
+        el.style.backdropFilter = 'blur(14px)'
+        el.style.padding        = '1rem 5vw'
+      } else {
+        el.style.background     = 'transparent'
+        el.style.backdropFilter = 'none'
+        el.style.padding        = '1.75rem 5vw'
+      }
+    }
+    window.addEventListener('scroll', onScroll, { passive: true })
+    return () => window.removeEventListener('scroll', onScroll)
+  }, [])
+
   return (
-    <header style={{
-      position: 'fixed', top: 0, left: 0, width: '100%',
-      padding: '2.5rem 2.5rem',
-      display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-      zIndex: 500,
-      transition: 'background 0.4s, padding 0.4s',
-    }} id="site-header">
-      <span style={{ fontSize: '1.5rem', fontWeight: 900, letterSpacing: '-0.05em', cursor: 'pointer' }}>
+    <header
+      ref={ref}
+      style={{
+        position  : 'fixed',
+        top       : 0, left: 0, right: 0,
+        zIndex    : 500,
+        display   : 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding   : '1.75rem 5vw',
+        transition: 'background 0.4s, backdrop-filter 0.4s, padding 0.4s',
+      }}
+    >
+      <a
+        href="/"
+        style={{
+          fontFamily   : 'var(--font-display)',
+          fontSize     : '1.15rem',
+          fontWeight   : 700,
+          letterSpacing: '-0.03em',
+          textDecoration: 'none',
+          color        : 'var(--black)',
+        }}
+      >
         marketeam
-      </span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
-        <nav style={{ display: 'flex', gap: '2.5rem' }}>
-          {['Strategy', 'Talent', 'Success'].map(l => (
-            <a key={l} href="#" style={{
-              fontSize: '0.72rem', fontWeight: 800,
-              textTransform: 'uppercase', letterSpacing: '0.22em',
-              textDecoration: 'none', color: '#1a1a1a',
-              transition: 'color 0.3s',
-            }}>
-              {l}
-            </a>
-          ))}
-        </nav>
-        <span style={{
-          fontSize: '0.72rem', fontWeight: 800,
-          textTransform: 'uppercase', letterSpacing: '0.22em',
-          borderBottom: '2px solid #1a1a1a', paddingBottom: '0.2rem',
-          cursor: 'pointer',
-        }}>
-          Menu ≡
+      </a>
+
+      <button
+        style={{
+          fontFamily   : 'var(--font-body)',
+          display      : 'flex',
+          alignItems   : 'center',
+          gap          : '10px',
+          background   : 'none',
+          border       : 'none',
+          cursor       : 'none',
+          fontSize     : '11px',
+          fontWeight   : 500,
+          letterSpacing: '0.15em',
+          textTransform: 'uppercase',
+          color        : 'var(--black)',
+        }}
+      >
+        Menu
+        <span style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+          <span style={{ width: '20px', height: '1.5px', background: 'var(--black)', display: 'block' }} />
+          <span style={{ width: '14px', height: '1.5px', background: 'var(--black)', display: 'block' }} />
         </span>
-      </div>
+      </button>
     </header>
   )
 }
 
-/* ── Philosophy section ─────────────────────────────────────────────────────── */
+/* ── Philosophy ─────────────────────────────────────────────────────────────── */
 function Philosophy () {
   return (
-    <section style={{
-      position: 'relative',
-      minHeight: '100vh',
-      padding: 'clamp(5rem,8vw,9rem) clamp(2rem,10vw,8rem)',
-      display: 'flex', flexDirection: 'column', justifyContent: 'center',
-      background: '#f9fafb',
-    }}>
-      <div style={{ maxWidth: '60rem' }}>
-        <h2 style={{
-          fontSize: 'clamp(2.2rem,6vw,5.5rem)',
-          fontWeight: 800, lineHeight: 0.92,
-          letterSpacing: '-0.045em', margin: '0 0 3rem',
-        }}>
-          Our goal is more than staffing.{' '}
-          We build{' '}
-          <span style={{ color: '#0055ff' }}>marketing engines</span>
-          {' '}that inspire.
-        </h2>
-        <div style={{ width: '6rem', height: '4px', background: '#0055ff', marginBottom: '3.5rem' }} />
-        <p style={{
-          fontSize: 'clamp(1.2rem,2vw,2rem)',
-          color: '#6b7280', fontWeight: 500,
-          lineHeight: 1.5, maxWidth: '44rem', margin: 0,
-        }}>
-          No matter the scale, we take your vision and inject it with elite
-          talent required to dominate. Fast, efficient, and precise.
-        </p>
-      </div>
+    <section
+      style={{
+        padding   : 'clamp(6rem,12vw,12rem) 5vw',
+        background: 'var(--white)',
+        maxWidth  : '900px',
+      }}
+    >
+      <p
+        data-reveal
+        style={{
+          fontFamily   : 'var(--font-body)',
+          fontSize     : 'clamp(1.4rem, 3vw, 2.4rem)',
+          fontWeight   : 300,
+          lineHeight   : 1.38,
+          letterSpacing: '-0.01em',
+          color        : 'var(--black)',
+          margin       : 0,
+        }}
+      >
+        Our goal is more than staffing.{' '}
+        We build{' '}
+        <em style={{ fontStyle: 'italic', color: 'var(--blue)' }}>
+          marketing engines
+        </em>{' '}
+        that inspire.
+      </p>
+
+      <div
+        data-reveal
+        style={{ width: '4rem', height: '3px', background: 'var(--blue)', marginTop: '4rem' }}
+      />
+
+      <p
+        data-reveal
+        style={{
+          fontFamily: 'var(--font-body)',
+          fontSize  : 'clamp(1rem, 1.5vw, 1.3rem)',
+          fontWeight: 300,
+          lineHeight: 1.6,
+          color     : '#666',
+          marginTop : '2.5rem',
+          maxWidth  : '44rem',
+        }}
+      >
+        No matter the scale, we take your vision and inject it with elite
+        talent required to dominate. Fast, efficient, and precise.
+      </p>
     </section>
   )
 }
 
-/* ── Metrics section ────────────────────────────────────────────────────────── */
+/* ── Metrics ─────────────────────────────────────────────────────────────────── */
 const STATS = [
-  { value: '2018', label: 'Established' },
-  { value: '500+', label: 'Talent Pool'  },
-  { value: '100%', label: 'Vetted'       },
-  { value: '∞',    label: 'Execution'   },
+  { v: '2018', l: 'Established' },
+  { v: '500+', l: 'Talent Pool'  },
+  { v: '100%', l: 'Vetted'       },
+  { v: '∞',    l: 'Execution'   },
 ]
 
 function Metrics () {
   return (
-    <section style={{
-      position: 'relative',
-      minHeight: '100vh',
-      padding: 'clamp(5rem,8vw,9rem) clamp(2rem,10vw,8rem)',
-      display: 'flex', flexDirection: 'column', justifyContent: 'center',
-      background: '#0055ff', color: '#fff',
-      overflow: 'hidden',
-    }}>
-      <p style={{
-        fontSize: '0.7rem', fontWeight: 800,
-        textTransform: 'uppercase', letterSpacing: '0.5em',
-        opacity: 0.4, marginBottom: '5rem',
-      }}>
+    <section
+      data-reveal
+      style={{
+        background: 'var(--blue)',
+        color     : 'var(--white)',
+        padding   : 'clamp(5rem,10vw,10rem) 5vw',
+      }}
+    >
+      <p style={{ fontSize: '0.65rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.5em', opacity: 0.45, marginBottom: '4rem' }}>
         Key Advantage
       </p>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))', gap: '1.5rem' }}>
-        {STATS.map(({ value, label }) => (
-          <div key={label} style={{
-            borderRadius: '2.5rem',
-            padding: '3.5rem 2.5rem',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.12)',
-            backdropFilter: 'blur(20px)',
-            transition: 'transform 0.5s cubic-bezier(.23,1,.32,1), background 0.5s',
-          }}
-            onMouseEnter={e => {
-              e.currentTarget.style.transform = 'translateY(-12px)'
-              e.currentTarget.style.background = 'rgba(255,255,255,0.10)'
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))', gap: '1.5rem' }}>
+        {STATS.map(({ v, l }) => (
+          <div
+            key={l}
+            style={{
+              borderRadius: '2rem',
+              padding     : '3rem 2rem',
+              border      : '1px solid rgba(255,255,255,0.14)',
+              background  : 'rgba(255,255,255,0.04)',
+              backdropFilter: 'blur(16px)',
+              transition  : 'transform 0.45s cubic-bezier(.23,1,.32,1)',
             }}
-            onMouseLeave={e => {
-              e.currentTarget.style.transform = 'translateY(0)'
-              e.currentTarget.style.background = 'rgba(255,255,255,0.04)'
-            }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-10px)' }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'translateY(0)' }}
           >
-            <div style={{ fontSize: 'clamp(3.5rem,6vw,5.5rem)', fontWeight: 900, letterSpacing: '-0.04em', marginBottom: '1rem' }}>
-              {value}
-            </div>
-            <div style={{ fontSize: '0.6rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.3em', opacity: 0.6 }}>
-              {label}
-            </div>
+            <div style={{ fontSize: 'clamp(3rem,5.5vw,5rem)', fontWeight: 700, letterSpacing: '-0.04em', marginBottom: '0.8rem' }}>{v}</div>
+            <div style={{ fontSize: '0.6rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.3em', opacity: 0.6 }}>{l}</div>
           </div>
         ))}
       </div>
@@ -181,35 +220,18 @@ function Metrics () {
   )
 }
 
-/* ── Footer / CTA ───────────────────────────────────────────────────────────── */
+/* ── Footer / CTA ────────────────────────────────────────────────────────────── */
 function Footer () {
   return (
-    <footer style={{
-      position: 'relative',
-      minHeight: '100vh',
-      padding: 'clamp(5rem,8vw,9rem) clamp(2rem,10vw,8rem)',
-      display: 'flex', flexDirection: 'column', justifyContent: 'center',
-      background: '#0a0a0a', color: '#fff',
-    }}>
-      {/* CTA */}
-      <div style={{ textAlign: 'center', padding: '5rem 0 8rem' }}>
-        <p style={{
-          fontSize: '0.65rem', fontWeight: 800, color: '#0055ff',
-          textTransform: 'uppercase', letterSpacing: '0.45em', marginBottom: '3rem',
-        }}>
+    <footer style={{ background: 'var(--black)', color: 'var(--white)', padding: 'clamp(5rem,10vw,10rem) 5vw' }}>
+      <div data-reveal style={{ paddingBottom: '6rem' }}>
+        <p style={{ fontSize: '0.65rem', fontWeight: 500, color: 'var(--blue)', textTransform: 'uppercase', letterSpacing: '0.45em', marginBottom: '2rem' }}>
           Ready to grow?
         </p>
-        <h2 style={{
-          fontSize: 'clamp(2.5rem,7vw,7rem)',
-          fontWeight: 900, letterSpacing: '-0.04em', lineHeight: 0.92, margin: 0,
-        }}>
+        <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(2.5rem,7vw,7rem)', fontWeight: 700, letterSpacing: '-0.04em', lineHeight: 0.9, margin: 0 }}>
           You have a project idea.<br />
-          <span style={{
-            color: '#4ade80',
-            borderBottom: '0.12em solid #4ade80',
-            cursor: 'pointer',
-            transition: 'color 0.4s',
-          }}
+          <span
+            style={{ color: '#4ade80', borderBottom: '0.08em solid #4ade80', cursor: 'none', transition: 'color 0.4s' }}
             onMouseEnter={e => { e.currentTarget.style.color = '#fff' }}
             onMouseLeave={e => { e.currentTarget.style.color = '#4ade80' }}
           >
@@ -218,38 +240,21 @@ function Footer () {
         </h2>
       </div>
 
-      {/* Links grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit,minmax(150px,1fr))',
-        gap: '4rem',
-        opacity: 0.38,
-        fontSize: '0.62rem', fontWeight: 800,
-        textTransform: 'uppercase', letterSpacing: '0.22em',
-      }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: '3rem', opacity: 0.38, fontSize: '0.62rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em' }}>
         {[
-          { heading: 'Connect',    items: ['hello@marketeam.io', '+44 20 7946 0958'] },
-          { heading: 'Location',   items: ['London, SE1 7PB', 'United Kingdom'] },
-          { heading: 'Network',    items: ['LinkedIn', 'Instagram', 'Behance'] },
-          { heading: 'Compliance', items: ['Privacy Policy', 'Terms of Use', 'Cookies'] },
-        ].map(({ heading, items }) => (
-          <div key={heading}>
-            <p style={{ color: '#6b7280', marginBottom: '1.2rem' }}>{heading}</p>
-            {items.map(i => (
-              <p key={i} style={{ fontSize: '0.8rem', marginBottom: '0.6rem', cursor: 'pointer' }}>{i}</p>
-            ))}
+          { h: 'Connect',    items: ['hello@marketeam.io', '+44 20 7946 0958'] },
+          { h: 'Location',   items: ['London, SE1 7PB', 'United Kingdom'] },
+          { h: 'Network',    items: ['LinkedIn', 'Instagram', 'Behance'] },
+          { h: 'Compliance', items: ['Privacy Policy', 'Terms of Use', 'Cookies'] },
+        ].map(({ h, items }) => (
+          <div key={h}>
+            <p style={{ color: '#666', marginBottom: '1rem' }}>{h}</p>
+            {items.map(i => <p key={i} style={{ fontSize: '0.78rem', marginBottom: '0.5rem', cursor: 'none' }}>{i}</p>)}
           </div>
         ))}
       </div>
 
-      {/* Bottom bar */}
-      <div style={{
-        marginTop: '5rem', paddingTop: '2rem',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        display: 'flex', justifyContent: 'space-between',
-        opacity: 0.18, fontSize: '0.55rem', fontWeight: 700,
-        textTransform: 'uppercase', letterSpacing: '0.25em',
-      }}>
+      <div style={{ marginTop: '4rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', opacity: 0.2, fontSize: '0.55rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em' }}>
         <span>© 2026 marketeam global limited.</span>
         <span>Built for the future of marketing</span>
       </div>
@@ -257,34 +262,13 @@ function Footer () {
   )
 }
 
-/* ── Scroll-based header shrink ─────────────────────────────────────────────── */
-function useHeaderScroll () {
-  useEffect(() => {
-    const header = document.getElementById('site-header')
-    if (!header) return
-    const onScroll = () => {
-      if (window.scrollY > 80) {
-        header.style.background     = 'rgba(255,255,255,0.85)'
-        header.style.backdropFilter = 'blur(12px)'
-        header.style.padding        = '1.2rem 2.5rem'
-      } else {
-        header.style.background     = 'transparent'
-        header.style.backdropFilter = 'none'
-        header.style.padding        = '2.5rem 2.5rem'
-      }
-    }
-    window.addEventListener('scroll', onScroll, { passive: true })
-    return () => window.removeEventListener('scroll', onScroll)
-  }, [])
-}
-
-/* ── Root ───────────────────────────────────────────────────────────────────── */
+/* ── Root ────────────────────────────────────────────────────────────────────── */
 export default function App () {
-  useHeaderScroll()
+  useGsapReveal()    // GSAP hero entrance + scroll reveals
 
   return (
     <>
-      <Cursor />
+      <CustomCursor />
       <Header />
       <main>
         <Hero />

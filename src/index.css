@@ -2,38 +2,61 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ── Design tokens ─────────────────────────────────────────────────────────── */
+:root {
+  --white : #FFFFFF;
+  --black : #0A0A0A;
+  --blue  : #1E56FF;
+  --blue-l: #4D7AFF;
+  --font-display: 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+  --font-body   : 'DM Sans', 'Helvetica Neue', Arial, sans-serif;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
+
+html { background: var(--white); color: var(--black); }
 
 body {
   margin: 0;
-  font-family: 'Inter', sans-serif;
-  background: #ffffff;
-  color: #1a1a1a;
+  font-family: var(--font-body);
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
+  cursor: none;   /* replaced by CustomCursor */
 }
 
-/* Custom cursor */
-.cursor {
-  width: 8px;
-  height: 8px;
-  background: #0055ff;
-  border-radius: 50%;
+/* ── Hero text reveal (initial hidden state for GSAP) ──────────────────────── */
+.hero-line {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+/* ── Custom cursor ─────────────────────────────────────────────────────────── */
+.cursor-dot {
   position: fixed;
+  top: 0; left: 0;
+  width: 6px; height: 6px;
+  background: var(--black);
+  border-radius: 50%;
   pointer-events: none;
   z-index: 9999;
-  mix-blend-mode: difference;
   transform: translate(-50%, -50%);
-  transition: transform 0.15s ease;
 }
-.cursor-follower {
-  width: 36px;
-  height: 36px;
-  border: 1px solid rgba(0,85,255,0.35);
-  border-radius: 50%;
+
+.cursor-ring {
   position: fixed;
+  top: 0; left: 0;
+  width: 30px; height: 30px;
+  border: 1.5px solid var(--black);
+  border-radius: 50%;
   pointer-events: none;
   z-index: 9998;
   transform: translate(-50%, -50%);
-  transition: transform 0.35s ease, width 0.3s, height 0.3s, border-color 0.3s;
+  opacity: 0.45;
+  transition: width 0.25s ease, height 0.25s ease, opacity 0.25s ease;
+}
+
+.cursor-ring.expanded {
+  width: 52px;
+  height: 52px;
+  opacity: 0.2;
 }

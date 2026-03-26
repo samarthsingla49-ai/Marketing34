@@ -1,169 +1,203 @@
 import RibbonScene from './RibbonScene'
 
 /*
-  Z-index layering for the weave illusion
-  ────────────────────────────────────────
-  Canvas (RibbonScene)    → z-index: 5
-  "We unlock"  + "talent." → z-index: 1   ribbon paints IN FRONT of these lines
-  "[top] marketing"        → z-index: 15  ribbon paints BEHIND this line
+  Z-index weave (torus canvas at z-index 5):
+  ┌─────────────────────────────────────────┐
+  │ "We unlock"   z:1  ← torus IN FRONT    │
+  │ "top [marketing talent.]" z:15 ← torus BEHIND │
+  │ (tagline/button)  z:1                  │
+  └─────────────────────────────────────────┘
 
-  isolation:"isolate" on the section creates a fresh stacking context so
-  these z-indices are self-contained and never conflict with the fixed header.
+  isolation:"isolate" on the section scopes all z-indices so the
+  fixed header (z:500) never bleeds in.
 */
-
-const titleStyle = {
-  fontSize     : 'clamp(3.2rem, 10.5vw, 9.5rem)',
-  lineHeight   : 0.85,
-  fontWeight   : 900,
-  letterSpacing: '-0.06em',
-  margin       : 0,
-}
-
-const lineBehind = {    // ribbon in front
-  display : 'block',
-  position: 'relative',
-  zIndex  : 1,
-}
-
-const lineFront = {     // ribbon behind
-  display : 'block',
-  position: 'relative',
-  zIndex  : 15,
-}
 
 export default function Hero () {
   return (
     <section
       id="hero-section"
       style={{
-        position : 'relative',
-        isolation: 'isolate',      // own stacking context — clean z-index scope
-        minHeight: '100vh',
-        padding  : 'clamp(5rem,8vw,8rem) clamp(2rem,10vw,8rem)',
-        display  : 'flex',
+        position      : 'relative',
+        isolation     : 'isolate',
+        height        : '100vh',
+        display       : 'flex',
         flexDirection : 'column',
         justifyContent: 'center',
-        overflow : 'hidden',
+        overflow      : 'hidden',
+        background    : 'var(--white)',
+        padding       : '0 5vw',
       }}
     >
-      {/* ── 3-D canvas overlay (z-index 5) ─────────────────────────────── */}
+      {/* ── 3D canvas (z-index 5) ──────────────────────────────────────────── */}
       <RibbonScene />
 
-      {/* ── Hero content ─────────────────────────────────────────────────── */}
-      <div style={{ position: 'relative', maxWidth: '80rem' }}>
-
-        {/* Title — three lines at deliberately different z-indices */}
-        <h1 style={{ ...titleStyle, marginBottom: '2rem' }}>
-          {/* LINE 1 — BEHIND ribbon */}
-          <span style={lineBehind}>We unlock</span>
-
-          {/* LINE 2 — IN FRONT of ribbon (ribbon weaves behind this) */}
-          <span style={lineFront}>
-            <span style={{
-              display      : 'inline-flex',
-              alignItems   : 'center',
-              border       : '0.055em solid #1a1a1a',
-              borderRadius : '999px',
-              padding      : '0 0.38em',
-              margin       : '0 0.08em',
-              fontStyle    : 'italic',
-              height       : '0.88em',
-              verticalAlign: 'middle',
-            }}>
-              top
-            </span>
-            {' marketing'}
+      {/* ── Hero headline ────────────────────────────────────────────────────
+          Two lines matching the Atuin rhythm:
+            Line 1 — BEHIND torus (z:1)
+            Line 2 — IN FRONT of torus (z:15), contains the large pill word
+      ─────────────────────────────────────────────────────────────────────── */}
+      <div style={{ position: 'relative', maxWidth: '95vw' }}>
+        <h1
+          style={{
+            fontFamily   : 'var(--font-display)',
+            fontSize     : 'clamp(4rem, 11.5vw, 10.5rem)',
+            fontWeight   : 700,
+            lineHeight   : 0.88,
+            letterSpacing: '-0.04em',
+            color        : 'var(--black)',
+            margin       : '0 0 clamp(2.5rem,5vw,5rem)',
+          }}
+        >
+          {/* LINE 1 — behind torus */}
+          <span
+            className="hero-line"
+            style={{ display: 'block', position: 'relative', zIndex: 1 }}
+          >
+            We unlock
           </span>
 
-          {/* LINE 3 — BEHIND ribbon */}
-          <span style={lineBehind}>talent.</span>
+          {/* LINE 2 — in front of torus.
+              "top" stays as a small italic pill (like Atuin's "into").
+              "marketing" gets the large rectangular box (like Atuin's "software"). */}
+          <span
+            className="hero-line"
+            style={{
+              display : 'block',
+              position: 'relative',
+              zIndex  : 15,
+              marginTop: '0.08em',
+            }}
+          >
+            {/* Small italic pill — "into" equivalent */}
+            <span
+              style={{
+                display      : 'inline-flex',
+                alignItems   : 'center',
+                border       : '2.5px solid var(--black)',
+                borderRadius : '999px',
+                padding      : '0 0.32em',
+                fontStyle    : 'italic',
+                fontWeight   : 400,
+                height       : '0.88em',
+                verticalAlign: 'middle',
+                marginRight  : '0.18em',
+              }}
+            >
+              top
+            </span>
+
+            {/* Large rectangular box — "software" equivalent */}
+            <span
+              style={{
+                display      : 'inline-block',
+                border       : '2.5px solid var(--black)',
+                borderRadius : '0.18em',
+                padding      : '0.04em 0.3em',
+                lineHeight   : 1,
+                verticalAlign: 'middle',
+              }}
+            >
+              marketing
+            </span>
+          </span>
+
+          {/* LINE 3 — behind torus */}
+          <span
+            className="hero-line"
+            style={{
+              display  : 'block',
+              position : 'relative',
+              zIndex   : 1,
+              marginTop: '0.06em',
+            }}
+          >
+            talent.
+          </span>
         </h1>
 
-        {/* Sub-row: tagline + CTA */}
-        <div style={{
-          display       : 'flex',
-          flexWrap      : 'wrap',
-          alignItems    : 'flex-end',
-          justifyContent: 'space-between',
-          marginTop     : 'clamp(3rem,6vw,7rem)',
-          gap           : '2.5rem',
-        }}>
-          <p style={{
-            fontSize  : 'clamp(1.1rem,1.8vw,1.75rem)',
-            maxWidth  : '32rem',
-            color     : '#6b7280',
-            fontWeight: 500,
-            lineHeight: 1.45,
-            margin    : 0,
-            position  : 'relative',
-            zIndex    : 1,
-          }}>
+        {/* ── Sub-copy + CTA ───────────────────────────────────────────────── */}
+        <div
+          style={{
+            display       : 'flex',
+            flexWrap      : 'wrap',
+            alignItems    : 'center',
+            gap           : '2.5rem',
+            position      : 'relative',
+            zIndex        : 1,
+          }}
+        >
+          <p
+            data-reveal
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize  : 'clamp(1rem, 1.6vw, 1.5rem)',
+              fontWeight: 300,
+              lineHeight: 1.5,
+              color     : '#555',
+              maxWidth  : '28rem',
+              margin    : 0,
+            }}
+          >
             Connect with vetted marketing specialists who deliver results.
-            From strategy to execution, find the perfect talent for your
-            growth goals.
+            From strategy to execution — fast, efficient, precise.
           </p>
 
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <button
-              style={{
-                background  : '#0a0a0a',
-                color       : '#fff',
-                border      : 'none',
-                borderRadius: '999px',
-                padding     : '1.4rem 3.2rem',
-                fontSize    : '1.1rem',
-                fontWeight  : 800,
-                cursor      : 'pointer',
-                letterSpacing: '0.01em',
-                transition  : 'transform 0.25s cubic-bezier(.23,1,.32,1)',
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.06)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)' }}
-            >
-              Get Started →
-            </button>
-          </div>
+          <button
+            data-reveal
+            style={{
+              fontFamily   : 'var(--font-body)',
+              background   : 'var(--black)',
+              color        : 'var(--white)',
+              border       : 'none',
+              borderRadius : '999px',
+              padding      : '1.1rem 2.8rem',
+              fontSize     : '0.95rem',
+              fontWeight   : 500,
+              letterSpacing: '0.01em',
+              cursor       : 'none',
+              transition   : 'background 0.25s ease',
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = 'var(--blue)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'var(--black)' }}
+          >
+            Get Started →
+          </button>
         </div>
       </div>
 
-      {/* ── Location tag (bottom-left) ────────────────────────────────────── */}
-      <div style={{
-        position    : 'absolute',
-        bottom      : '2.5rem',
-        left        : '2.5rem',
-        display     : 'flex',
-        alignItems  : 'center',
-        fontSize    : '0.6rem',
-        fontWeight  : 800,
-        textTransform: 'uppercase',
-        letterSpacing: '0.32em',
-        opacity     : 0.22,
-        zIndex      : 20,
-      }}>
-        <span style={{
-          width: 10, height: 10,
-          background: '#0055ff',
-          borderRadius: '50%',
-          display: 'inline-block',
-          marginRight: '0.8rem',
-          flexShrink: 0,
-        }} />
-        London — Dubai — New York
+      {/* ── Confidence anchors ───────────────────────────────────────────────── */}
+      <div
+        style={{
+          position     : 'absolute',
+          bottom       : '2rem',
+          left         : '5vw',
+          fontSize     : '10px',
+          fontWeight   : 500,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color        : 'var(--black)',
+          opacity      : 0.4,
+          zIndex       : 20,
+        }}
+      >
+        Since 2018
       </div>
 
-      {/* ── Scroll indicator (bottom-right) ──────────────────────────────── */}
-      <div style={{
-        position    : 'absolute',
-        bottom      : '2.5rem',
-        right       : '2.5rem',
-        fontSize    : '0.55rem',
-        fontWeight  : 800,
-        textTransform: 'uppercase',
-        letterSpacing: '0.32em',
-        opacity     : 0.22,
-        zIndex      : 20,
-      }}>
-        Scroll Down
+      <div
+        style={{
+          position     : 'absolute',
+          bottom       : '2rem',
+          right        : '5vw',
+          fontSize     : '10px',
+          fontWeight   : 500,
+          letterSpacing: '0.18em',
+          textTransform: 'uppercase',
+          color        : 'var(--black)',
+          opacity      : 0.4,
+          zIndex       : 20,
+        }}
+      >
+        Scroll Down ↓
       </div>
     </section>
   )
