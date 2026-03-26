@@ -4,9 +4,6 @@ import { useGsapReveal } from './hooks/useGsapReveal'
 
 /* ── Custom cursor (replaces system cursor) ─────────────────────────────────── */
 function CustomCursor () {
-  // Don't render on touch/pointer-coarse devices (phones, tablets)
-  if (typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches) return null
-
   const dot  = useRef(null)
   const ring = useRef(null)
   const pos  = useRef({ x: 0, y: 0 })
@@ -243,7 +240,7 @@ function Footer () {
         </h2>
       </div>
 
-      <div className="footer-links-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: '3rem', opacity: 0.38, fontSize: '0.62rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(140px,1fr))', gap: '3rem', opacity: 0.38, fontSize: '0.62rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em' }}>
         {[
           { h: 'Connect',    items: ['hello@marketeam.io', '+44 20 7946 0958'] },
           { h: 'Location',   items: ['London, SE1 7PB', 'United Kingdom'] },
@@ -252,12 +249,12 @@ function Footer () {
         ].map(({ h, items }) => (
           <div key={h}>
             <p style={{ color: '#666', marginBottom: '1rem' }}>{h}</p>
-            {items.map(i => <p key={i} style={{ fontSize: '0.78rem', marginBottom: '0.5rem' }}>{i}</p>)}
+            {items.map(i => <p key={i} style={{ fontSize: '0.78rem', marginBottom: '0.5rem', cursor: 'none' }}>{i}</p>)}
           </div>
         ))}
       </div>
 
-      <div className="footer-bottom" style={{ marginTop: '4rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', opacity: 0.2, fontSize: '0.55rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em' }}>
+      <div style={{ marginTop: '4rem', paddingTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.08)', display: 'flex', justifyContent: 'space-between', opacity: 0.2, fontSize: '0.55rem', fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.2em' }}>
         <span>© 2026 marketeam global limited.</span>
         <span>Built for the future of marketing</span>
       </div>
