@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>marketeam | Unlock Top Marketing Talent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Inter', sans-serif;
+            background-color: #ffffff;
+            color: #1a1a1a;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        .section {
+            position: relative;
+            min-height: 100vh;
+            padding: 8vw 10vw;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .hero-title {
+            font-size: clamp(3.5rem, 11vw, 10rem);
+            line-height: 0.8;
+            font-weight: 900;
+            letter-spacing: -0.06em;
+            margin-bottom: 2rem;
+        }
+
+        .pill-wrap {
+            display: inline-flex;
+            align-items: center;
+            border: 0.05em solid #1a1a1a;
+            border-radius: 999px;
+            padding: 0 0.4em;
+            margin: 0 0.1em;
+            font-style: italic;
+            height: 0.9em;
+            vertical-align: middle;
+            font-weight: 700;
+        }
+
+        .cursor {
+            width: 8px;
+            height: 8px;
+            background: #0055ff;
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 100;
+            mix-blend-mode: difference;
+            transition: transform 0.2s ease;
+        }
+
+        .cursor-follower {
+            width: 40px;
+            height: 40px;
+            border: 1px solid rgba(0, 85, 255, 0.3);
+            border-radius: 50%;
+            position: fixed;
+            pointer-events: none;
+            z-index: 99;
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card {
+            border-radius: 40px;
+            padding: 4rem 3rem;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+
+        .stat-card:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-15px);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .reveal {
+            opacity: 0;
+            transform: translateY(60px);
+        }
+
+        .footer-cta {
+            font-size: clamp(2.5rem, 8vw, 7.5rem);
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            line-height: 0.9;
+        }
+
+        .nav-link {
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            transition: color 0.3s ease;
+        }
+
+        .nav-link:hover {
+            color: #0055ff;
+        }
+
+        .blue-dot {
+            width: 12px;
+            height: 12px;
+            background: #0055ff;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .hero-title { font-size: 4.5rem; }
+            .section { padding: 20vw 8vw; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="cursor" id="cursor"></div>
+    <div class="cursor-follower" id="cursor-follower"></div>
+
+    <!-- Minimal Header -->
+    <header class="fixed top-0 left-0 w-full p-10 flex justify-between items-center z-50">
+        <div class="text-2xl font-black tracking-tighter hover:text-blue-600 transition-colors cursor-pointer">marketeam</div>
+        <div class="flex items-center space-x-12">
+            <nav class="hidden md:flex space-x-10">
+                <a href="#" class="nav-link">Strategy</a>
+                <a href="#" class="nav-link">Talent</a>
+                <a href="#" class="nav-link">Success</a>
+            </nav>
+            <div class="font-bold text-xs uppercase tracking-widest border-b-2 border-black cursor-pointer pb-1">Menu</div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <main>
+        <section class="section">
+            <div class="max-w-7xl">
+                <h1 class="hero-title reveal">
+                    We unlock<br>
+                    <span class="pill-wrap">top</span> marketing<br>
+                    talent.
+                </h1>
+                <div class="flex flex-col md:flex-row md:items-end justify-between mt-24 gap-12">
+                    <p class="text-2xl md:text-3xl max-w-2xl text-gray-400 font-medium leading-tight reveal">
+                        Connect with vetted marketing specialists who deliver results. From strategy to execution, find the perfect talent for your growth goals.
+                    </p>
+                    <div class="reveal">
+                        <button class="group relative overflow-hidden bg-black text-white rounded-full px-14 py-7 text-xl font-bold transition-all hover:pr-20">
+                            <span class="relative z-10">Get Started</span>
+                            <span class="absolute right-[-20px] top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 group-hover:right-8 transition-all">→</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="absolute bottom-12 left-10 flex items-center text-[10px] font-black uppercase tracking-[0.3em] opacity-20">
+                <div class="blue-dot"></div>
+                <span>London — Dubai — New York</span>
+            </div>
+        </section>
+
+        <!-- Philosophy Section -->
+        <section class="section bg-gray-50">
+            <div class="max-w-5xl">
+                <h2 class="text-4xl md:text-8xl font-bold leading-[0.9] tracking-tighter reveal">
+                    Our goal is more than staffing. We build <span class="text-blue-600">marketing engines</span> that inspire.
+                </h2>
+                <div class="w-24 h-1 bg-blue-600 my-20 reveal"></div>
+                <p class="text-2xl md:text-4xl text-gray-400 font-medium max-w-3xl reveal leading-tight">
+                    No matter the scale, we take your vision and inject it with elite talent required to dominate. Fast, efficient, and precise.
+                </p>
+            </div>
+        </section>
+
+        <!-- Metric Section -->
+        <section class="section bg-[#0055ff] text-white overflow-hidden">
+            <div class="mb-32">
+                <h3 class="text-sm uppercase tracking-[0.5em] font-black opacity-40 reveal">Key Advantage</h3>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="stat-card reveal">
+                    <div class="text-8xl font-black mb-6 tracking-tighter">2018</div>
+                    <div class="text-[10px] uppercase tracking-[0.3em] font-bold opacity-60">Established</div>
+                </div>
+                <div class="stat-card reveal" style="transition-delay: 0.1s;">
+                    <div class="text-8xl font-black mb-6 tracking-tighter">500+</div>
+                    <div class="text-[10px] uppercase tracking-[0.3em] font-bold opacity-60">Talent Pool</div>
+                </div>
+                <div class="stat-card reveal" style="transition-delay: 0.2s;">
+                    <div class="text-8xl font-black mb-6 tracking-tighter">100%</div>
+                    <div class="text-[10px] uppercase tracking-[0.3em] font-bold opacity-60">Vetted</div>
+                </div>
+                <div class="stat-card reveal" style="transition-delay: 0.3s;">
+                    <div class="text-8xl font-black mb-6 tracking-tighter">∞</div>
+                    <div class="text-[10px] uppercase tracking-[0.3em] font-bold opacity-60">Execution</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Call to Action -->
+        <footer class="section bg-black text-white" id="contact">
+            <div class="flex flex-col items-center text-center py-20">
+                <p class="text-blue-500 font-black uppercase tracking-[0.4em] mb-12 text-xs reveal">Ready to grow?</p>
+                <h2 class="footer-cta reveal">
+                    You have a project idea.<br>
+                    <span class="text-green-400 border-b-8 border-green-400 cursor-pointer hover:text-white transition-all duration-500">Tell us about it!</span>
+                </h2>
+            </div>
+            
+            <div class="mt-48 grid grid-cols-1 md:grid-cols-4 gap-20 opacity-40 text-[10px] font-black uppercase tracking-[0.2em]">
+                <div>
+                    <p class="mb-6 text-gray-600">Connect</p>
+                    <p class="text-sm">hello@marketeam.io</p>
+                    <p class="text-sm mt-2">+44 20 7946 0958</p>
+                </div>
+                <div>
+                    <p class="mb-6 text-gray-600">Location</p>
+                    <p class="text-sm">London, SE1 7PB</p>
+                    <p class="text-sm mt-2">United Kingdom</p>
+                </div>
+                <div>
+                    <p class="mb-6 text-gray-600">Network</p>
+                    <div class="flex flex-col space-y-3 text-sm">
+                        <span class="hover:text-white cursor-pointer transition-colors">LinkedIn</span>
+                        <span class="hover:text-white cursor-pointer transition-colors">Instagram</span>
+                        <span class="hover:text-white cursor-pointer transition-colors">Behance</span>
+                    </div>
+                </div>
+                <div>
+                    <p class="mb-6 text-gray-600">Compliance</p>
+                    <div class="flex flex-col space-y-3 text-sm">
+                        <span class="hover:text-white cursor-pointer transition-colors">Privacy Policy</span>
+                        <span class="hover:text-white cursor-pointer transition-colors">Terms of Use</span>
+                        <span class="hover:text-white cursor-pointer transition-colors">Cookies</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-32 pt-12 border-t border-white/10 flex justify-between items-center opacity-20 text-[9px] font-bold uppercase tracking-widest">
+                <p>© 2026 marketeam global limited.</p>
+                <p>Built for the future of marketing</p>
+            </div>
+        </footer>
+    </main>
+
+    <script>
+        gsap.registerPlugin(ScrollTrigger);
+
+        // Custom Cursor Logic
+        const cursor = document.getElementById('cursor');
+        const follower = document.getElementById('cursor-follower');
+
+        window.addEventListener('mousemove', (e) => {
+            gsap.to(cursor, {
+                x: e.clientX,
+                y: e.clientY,
+                duration: 0.1
+            });
+            gsap.to(follower, {
+                x: e.clientX - 16,
+                y: e.clientY - 16,
+                duration: 0.3
+            });
+        });
+
+        // Reveal Animations on Scroll
+        const revealElements = document.querySelectorAll('.reveal');
+        revealElements.forEach((el) => {
+            gsap.to(el, {
+                scrollTrigger: {
+                    trigger: el,
+                    start: "top 85%",
+                    toggleActions: "play none none none"
+                },
+                opacity: 1,
+                y: 0,
+                duration: 1.2,
+                ease: "power4.out",
+                stagger: 0.2
+            });
+        });
+
+        // Magnetic effect for buttons
+        const buttons = document.querySelectorAll('button, .cursor-pointer');
+        buttons.forEach(btn => {
+            btn.addEventListener('mouseenter', () => {
+                gsap.to(follower, { scale: 2, borderColor: '#0055ff', backgroundColor: 'rgba(0, 85, 255, 0.1)', duration: 0.3 });
+            });
+            btn.addEventListener('mouseleave', () => {
+                gsap.to(follower, { scale: 1, borderColor: 'rgba(0, 85, 255, 0.3)', backgroundColor: 'transparent', duration: 0.3 });
+            });
+        });
+
+        // Smooth color transitions for header on scroll
+        ScrollTrigger.create({
+            trigger: "body",
+            start: "top top",
+            end: "bottom bottom",
+            onUpdate: (self) => {
+                const header = document.querySelector('header');
+                if (self.scroll() > 100) {
+                    header.style.backgroundColor = 'rgba(255,255,255,0.8)';
+                    header.style.backdropFilter = 'blur(10px)';
+                    header.style.padding = '20px 40px';
+                } else {
+                    header.style.backgroundColor = 'transparent';
+                    header.style.backdropFilter = 'none';
+                    header.style.padding = '40px';
+                }
+            }
+        });
+    </script>
+</body>
+</html>
