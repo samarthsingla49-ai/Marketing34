@@ -26,6 +26,7 @@ export default function Hero () {
         overflow      : 'hidden',
         background    : 'var(--white)',
         padding       : '0 5vw',
+        paddingTop    : 'clamp(5rem, 10vh, 7rem)', // clear the fixed header
       }}
     >
       {/* ── 3D canvas (z-index 5) ──────────────────────────────────────────── */}
@@ -117,6 +118,7 @@ export default function Hero () {
 
         {/* ── Sub-copy + CTA ───────────────────────────────────────────────── */}
         <div
+          className="hero-cta-row"
           style={{
             display       : 'flex',
             flexWrap      : 'wrap',
