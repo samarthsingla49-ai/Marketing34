@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>marketeam | Unlock Top Marketing Talent</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/ScrollTrigger.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap" rel="stylesheet">
@@ -123,6 +124,34 @@
             .hero-title { font-size: 4.5rem; }
             .section { padding: 20vw 8vw; }
         }
+
+        /* Ribbon canvas */
+        #ribbon-canvas {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        /* Hero title line animations (CSS, no GSAP, so transform:none at end clears stacking context) */
+        @keyframes heroLineReveal {
+            from { opacity: 0; transform: translateY(55px); }
+            to   { opacity: 1; transform: none; }
+        }
+
+        .hero-line {
+            display: block;
+            animation: heroLineReveal 1.1s cubic-bezier(0.23, 1, 0.32, 1) both;
+        }
+        .hero-line:nth-child(1) { animation-delay: 0.05s; }
+        .hero-line:nth-child(2) { animation-delay: 0.18s; }
+        .hero-line:nth-child(3) { animation-delay: 0.31s; }
+
+        /* z-index layering for weave effect:
+           canvas is z-index:5  →  line-back(1) goes behind, line-front(15) comes in front */
+        .hero-line-back  { position: relative; z-index: 1; }
+        .hero-line-front { position: relative; z-index: 15; }
     </style>
 </head>
 <body>
@@ -145,13 +174,19 @@
 
     <!-- Hero Section -->
     <main>
-        <section class="section">
+        <section class="section" id="hero-section">
+            <!-- Three.js ribbon canvas — sits between text layers (z-index 5) -->
+            <canvas id="ribbon-canvas"></canvas>
+
             <div class="max-w-7xl">
-                <h1 class="hero-title reveal">
-                    We unlock<br>
-                    <span class="pill-wrap">top</span> marketing<br>
-                    talent.
-                </h1>
+                <!-- Hero title split into 3 lines so the ribbon weaves between them.
+                     line-back  = z-index 1  → ribbon (z-index 5) paints IN FRONT of it
+                     line-front = z-index 15 → ribbon (z-index 5) paints BEHIND it        -->
+                <div class="hero-title">
+                    <span class="hero-line hero-line-back">We unlock</span>
+                    <span class="hero-line hero-line-front"><span class="pill-wrap">top</span> marketing</span>
+                    <span class="hero-line hero-line-back">talent.</span>
+                </div>
                 <div class="flex flex-col md:flex-row md:items-end justify-between mt-24 gap-12">
                     <p class="text-2xl md:text-3xl max-w-2xl text-gray-400 font-medium leading-tight reveal">
                         Connect with vetted marketing specialists who deliver results. From strategy to execution, find the perfect talent for your growth goals.
@@ -252,6 +287,167 @@
             </div>
         </footer>
     </main>
+
+    <!-- ============================================================
+         3D Flowing Ribbon — Three.js
+         Weaves through the hero text using CSS z-index layering:
+           canvas z-index 5  |  "We unlock" / "talent." at z-index 1
+           "[top] marketing" at z-index 15  →  ribbon passes behind it
+    ============================================================ -->
+    <script>
+    (function initRibbon() {
+        if (typeof THREE === 'undefined') return;
+
+        const canvas  = document.getElementById('ribbon-canvas');
+        const section = document.getElementById('hero-section');
+        if (!canvas || !section) return;
+
+        /* ---- Renderer ---- */
+        const renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: true, powerPreference: 'high-performance' });
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.setClearColor(0x000000, 0);
+
+        /* ---- Scene / Camera ---- */
+        const scene  = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(65, 1, 0.1, 100);
+        camera.position.set(0, 0, 7);
+
+        /* ---- Lighting ---- */
+        scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+
+        const keyLight = new THREE.DirectionalLight(0xffffff, 2.0);
+        keyLight.position.set(4, 5, 5);
+        scene.add(keyLight);
+
+        // Left fill — gives the ribbon a blue-lit edge
+        const fillLight = new THREE.PointLight(0x4477ff, 4, 22);
+        fillLight.position.set(-6, 1, 3);
+        scene.add(fillLight);
+
+        // Right rim — creates the bright white specular streak
+        const rimLight = new THREE.PointLight(0xffffff, 5, 18);
+        rimLight.position.set(5, -3, 4);
+        scene.add(rimLight);
+
+        /* ---- Geometry buffers ---- */
+        const SEGS = 220;           // segments along the ribbon length
+        const HALF_W = 0.68;        // half-width of the ribbon
+
+        const posArr  = new Float32Array((SEGS + 1) * 6);  // 2 verts × 3 floats
+        const normArr = new Float32Array((SEGS + 1) * 6);
+        const uvArr   = new Float32Array((SEGS + 1) * 4);  // 2 verts × 2 floats
+        const indices = [];
+
+        for (let i = 0; i <= SEGS; i++) {
+            const t = i / SEGS;
+            uvArr[i * 4]     = 0; uvArr[i * 4 + 1] = t;
+            uvArr[i * 4 + 2] = 1; uvArr[i * 4 + 3] = t;
+        }
+        for (let i = 0; i < SEGS; i++) {
+            const a = i*2, b = i*2+1, c = i*2+2, d = i*2+3;
+            indices.push(a, b, c,  b, d, c);
+        }
+
+        const geo = new THREE.BufferGeometry();
+        const posAttr  = new THREE.BufferAttribute(posArr,  3);
+        const normAttr = new THREE.BufferAttribute(normArr, 3);
+        geo.setAttribute('position', posAttr);
+        geo.setAttribute('normal',   normAttr);
+        geo.setAttribute('uv',       new THREE.BufferAttribute(uvArr, 2));
+        geo.setIndex(indices);
+
+        /* ---- Material ---- */
+        const mat = new THREE.MeshPhongMaterial({
+            color:     0x0044ee,
+            specular:  0x99bbff,
+            shininess: 130,
+            emissive:  new THREE.Color(0x001155),
+            side:      THREE.DoubleSide,
+        });
+
+        const ribbonMesh = new THREE.Mesh(geo, mat);
+        scene.add(ribbonMesh);
+
+        /* ---- Ribbon path update ---- */
+        function updateRibbon(t) {
+            // Build a smooth S-curve via CatmullRom control points
+            const N  = 13;
+            const pts = [];
+            for (let i = 0; i <= N; i++) {
+                const s = i / N;
+                const y =  (s - 0.5) * 15;
+                // Primary S-wave + secondary harmonic = organic water-like motion
+                const x =  Math.sin(s * Math.PI * 2.2  + t * 0.42) * 2.4
+                          + Math.sin(s * Math.PI * 5.0  + t * 0.22) * 0.55;
+                const z =  Math.cos(s * Math.PI * 2.8  + t * 0.36) * 1.5
+                          + Math.cos(s * Math.PI * 6.0  + t * 0.18) * 0.35;
+                pts.push(new THREE.Vector3(x, y, z));
+            }
+
+            const curve  = new THREE.CatmullRomCurve3(pts);
+            const frames = curve.computeFrenetFrames(SEGS, false);
+
+            for (let i = 0; i <= SEGS; i++) {
+                const s  = i / SEGS;
+                const p  = curve.getPoint(s);
+                const bn = frames.binormals[i];
+                const n  = frames.normals[i];
+
+                // Continuous twist along the ribbon length — creates the Möbius-like flip
+                const twist = s * Math.PI * 2.6 + t * 0.18;
+                const cosT  = Math.cos(twist);
+                const sinT  = Math.sin(twist);
+
+                // Rotated binormal (ribbon width direction)
+                const bx = bn.x * cosT + n.x * sinT;
+                const by = bn.y * cosT + n.y * sinT;
+                const bz = bn.z * cosT + n.z * sinT;
+
+                // Rotated normal (for shading)
+                const nx = -bn.x * sinT + n.x * cosT;
+                const ny = -bn.y * sinT + n.y * cosT;
+                const nz = -bn.z * sinT + n.z * cosT;
+
+                const vi = i * 6;
+                // Left edge
+                posArr[vi]   = p.x - bx * HALF_W;
+                posArr[vi+1] = p.y - by * HALF_W;
+                posArr[vi+2] = p.z - bz * HALF_W;
+                // Right edge
+                posArr[vi+3] = p.x + bx * HALF_W;
+                posArr[vi+4] = p.y + by * HALF_W;
+                posArr[vi+5] = p.z + bz * HALF_W;
+                // Normals (same for both edges — flat-shaded look)
+                normArr[vi]   = nx; normArr[vi+1] = ny; normArr[vi+2] = nz;
+                normArr[vi+3] = nx; normArr[vi+4] = ny; normArr[vi+5] = nz;
+            }
+
+            posAttr.needsUpdate  = true;
+            normAttr.needsUpdate = true;
+        }
+
+        /* ---- Resize ---- */
+        function onResize() {
+            const w = section.clientWidth;
+            const h = section.clientHeight;
+            renderer.setSize(w, h, false);
+            camera.aspect = w / h;
+            camera.updateProjectionMatrix();
+        }
+        onResize();
+        window.addEventListener('resize', onResize);
+
+        /* ---- Animation loop ---- */
+        function animate() {
+            requestAnimationFrame(animate);
+            if (document.hidden) return;
+            const time = performance.now() * 0.001;
+            updateRibbon(time);
+            renderer.render(scene, camera);
+        }
+        animate();
+    })();
+    </script>
 
     <script>
         gsap.registerPlugin(ScrollTrigger);
