@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react'
 import Hero from './components/Hero'
+import Services from './components/Services'
 import { useGsapReveal } from './hooks/useGsapReveal'
 
 /* ── Custom cursor (replaces system cursor) ─────────────────────────────────── */
@@ -273,6 +274,7 @@ export default function App () {
       <main>
         <Hero />
         <Philosophy />
+        <Services />
         <Metrics />
         <Footer />
       </main>
